@@ -1,0 +1,33 @@
+{
+	"config":
+	{
+		"max_responses":	5,
+		"name":				"SkillBoxSirchEngine",
+		"version":			"0.1"
+	},
+	"files":
+	[
+		"resorces\\file001.txt",
+		"resorces\\file002.txt",
+		"resorces\\file003.txt",
+		"resorces\\file004.txt",
+		"resorces\\file005.txt",
+		"resorces\\file006.txt",
+		"resorces\\file007.txt",
+		"resorces\\file008.txt",
+		"resorces\\file009.txt",
+		"resorces\\file010.txt",
+		"resorces\\file011.txt",
+		"resorces\\file012.txt",
+		"resorces\\file013.txt",
+		"resorces\\file014.txt",
+		"resorces\\file015.txt",
+		"resorces\\file016.txt",
+		"resorces\\file017.txt",
+		"resorces\\file018.txt",
+		"resorces\\file019.txt",
+		"resorces\\file020.txt",
+		"resorces\\file022.txt",
+		"resorces\\file021.txt"
+	]
+}

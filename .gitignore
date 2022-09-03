@@ -32,5 +32,6 @@
 *.app
 
 # Build
+/build/
 /cmake-build-debug/
 /.idea/

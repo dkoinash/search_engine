@@ -4,6 +4,7 @@
 git clone https://github.com/dkoinash/search_engine.git
 cd search_engine
 mkdir build
+cd build
 cmake ..
 cmake --build .
 ```

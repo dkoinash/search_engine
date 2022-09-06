@@ -9,6 +9,7 @@
 #include <map>
 #include <future>
 #include <queue>
+#include <mutex>
 
 struct Entry {
     size_t docId, count;

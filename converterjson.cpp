@@ -1,11 +1,15 @@
 #include "converterjson.h"
-
+std::mutex mtx;
 std::string getDoc(const std::string& address) {
     std::ifstream docFile;
     docFile.open(address);
     std::string str;
     std::string doc;
-    if(!docFile.is_open()) std::cerr << "file with address \"" << address << "\" is missing." << std::endl;
+
+    if(!docFile.is_open()) {
+        std::lock_guard<std::mutex> guard(mtx);
+        std::cerr << "file with address \"" << address << "\" is missing." << std::endl;
+    }
     else{
         do {
             str.clear();

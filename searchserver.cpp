@@ -1,47 +1,83 @@
 #include "searchserver.h"
 
+std::vector<std::string> makeListWord(const std::string& str){
+    std::vector<std::string> listWordsToSearch;
+    std::string tmpWord;
+    for (size_t j = 0; j < str.size(); ++j) {
+        bool wrdDone = false;
+        if (str[j] != ' ') {
+            tmpWord += str[j];
+        }
+        else {
+            wrdDone = true;
+        }
+        if (wrdDone || j == str.size() - 1) {
+            bool testUniq = true;
+            for (const auto& wrd : listWordsToSearch) {
+                if (wrd == tmpWord) testUniq = false;
+            }
+            if (testUniq) listWordsToSearch.push_back(tmpWord);
+            tmpWord.clear();
+        }
+    }
+    return listWordsToSearch;
+}
+
+std::vector<std::map<size_t, float>> makeVecMapEntry(std::vector<std::string>&listWordsToSearch, InvertedIndex &_index){
+    std::vector<std::map<size_t, float>> vecMapEntry;
+    std::map<size_t, float> mapEntry;
+    for (auto &word : listWordsToSearch) {
+        std::vector<Entry> EntryWord = _index.GetWordCount(word);
+        for (auto res : EntryWord) {
+            if (mapEntry.find(res.docId) == mapEntry.end()) mapEntry.insert(std::make_pair(res.docId, res.count));
+            else mapEntry[res.docId] += (float)res.count;
+        }
+        vecMapEntry.push_back(mapEntry);
+    }
+    return vecMapEntry;
+}
+
+std::vector<RelativeIndex > makeVecRIPerWord(std::map<size_t, float> &resMapEntry, float maxRel, int maxCountResult){
+    std::vector<RelativeIndex > resultPerWord;
+    size_t maxId = 0;
+    float mRank = 0.0;
+    int locCounttoRes = 0;
+    while (!resMapEntry.empty()) {
+        for (auto & it : resMapEntry) {
+            float tmpRank = it.second / maxRel;
+            if (tmpRank > mRank) {
+                mRank = it.second / maxRel;
+                maxId = it.first;
+            }
+        }
+        RelativeIndex tmpIdx;
+        tmpIdx.docId = maxId;
+        tmpIdx.rank = mRank;
+        auto to_erase = resMapEntry.find(maxId);
+        resMapEntry.erase(to_erase);
+        resultPerWord.push_back(tmpIdx);
+
+        maxId = 0;
+        mRank = 0.0;
+        locCounttoRes++;
+        if(locCounttoRes >= maxCountResult) break;
+    }
+    return resultPerWord;
+}
+
 std::vector<std::vector<RelativeIndex>> SearchServer::search(const std::vector<std::string>& queries_input)
 {
     std::vector<std::vector<RelativeIndex>> result;
-
     int maxCountResult = 5;
-    //ConverterJSON jsonData;
     maxCountResult = ConverterJSON::GetResponsesLimit();
 
     float maxRel = 0.0;
 
     for (auto str : queries_input) {
 
-        std::vector<std::string> listWordsToSearch;
-        std::string tmpWord;
-        for (size_t j = 0; j < str.size(); ++j) {
-            bool wrdDone = false;
-            if (str[j] != ' ') {
-                tmpWord += str[j];
-            }
-            else {
-                wrdDone = true;
-            }
-            if (wrdDone || j == str.size() - 1) {
-                bool testUniq = true;
-                for (const auto& wrd : listWordsToSearch) {
-                    if (wrd == tmpWord) testUniq = false;
-                }
-                if (testUniq) listWordsToSearch.push_back(tmpWord);
-                tmpWord.clear();
-            }
-        }
+        std::vector<std::string> listWordsToSearch = makeListWord(str);
 
-        std::vector<std::map<size_t, float>> vecMapEntry;
-        std::map<size_t, float> mapEntry;
-        for (auto &word : listWordsToSearch) {
-            std::vector<Entry> EntryWord = _index.GetWordCount(word);
-            for (auto res : EntryWord) {
-                if (mapEntry.find(res.docId) == mapEntry.end()) mapEntry.insert(std::make_pair(res.docId, res.count));
-                else mapEntry[res.docId] += (float)res.count;
-            }
-            vecMapEntry.push_back(mapEntry);
-        }
+        std::vector<std::map<size_t, float>> vecMapEntry = makeVecMapEntry(listWordsToSearch , _index);
 
         for (auto vec : vecMapEntry) {
             for (auto it = vec.begin(); it != vec.end(); ++it) {
@@ -60,31 +96,7 @@ std::vector<std::vector<RelativeIndex>> SearchServer::search(const std::vector<s
                 }
             }
         }
-
-        std::vector<RelativeIndex > resultPerWord;
-        size_t maxId = 0;
-        float mRank = 0.0;
-        int locCounttoRes = 0;
-        while (!resMapEntry.empty()) {
-            for (auto & it : resMapEntry) {
-                float tmpRank = it.second / maxRel;
-                if (tmpRank > mRank) {
-                    mRank = it.second / maxRel;
-                    maxId = it.first;
-                }
-            }
-            RelativeIndex tmpIdx;
-            tmpIdx.docId = maxId;
-            tmpIdx.rank = mRank;
-            auto to_erase = resMapEntry.find(maxId);
-            resMapEntry.erase(to_erase);
-            resultPerWord.push_back(tmpIdx);
-
-            maxId = 0;
-            mRank = 0.0;
-            locCounttoRes++;
-            if(locCounttoRes >= maxCountResult) break;
-        }
+        std::vector<RelativeIndex > resultPerWord = makeVecRIPerWord(resMapEntry, maxRel, maxCountResult);
         result.push_back(resultPerWord);
     }
     return result;

@@ -1,77 +1,31 @@
 #include "searchserver.h"
 
-class ConfigMissing: public std::exception
-{
-public:
-    const char* what() const noexcept override
-    {
-        return "The config file is missing.";
-    }
-};
-class RequestMissing: public std::exception
-{
-public:
-    const char* what() const noexcept override
-    {
-        return "The request file is missing.";
-    }
-};
-class ConfigEmpty: public std::exception
-{
-public:
-    const char* what() const noexcept override
-    {
-        return "The config file is empty.";
-    }
-};
-class RequestEmpty: public std::exception
-{
-public:
-    const char* what() const noexcept override
-    {
-        return "The request file is empty.";
-    }
-};
-
-
-void CheckConfigFiles(){
-    std::ifstream config, requests;
-    config.open("config.json");
-    if(!config.is_open()){
-        throw ConfigMissing();
-    }
-    nlohmann::json configJson;
-    config >> configJson;
-    if(configJson.find("config") == configJson.end() ||
-            configJson.find("files") == configJson.end()) throw ConfigEmpty();
-    config.close();
-    requests.open("requests.json");
-    if(!requests.is_open()){
-        throw RequestMissing();
-    }
-    nlohmann::json requestJson;
-    requests >> requestJson;
-    if(requestJson.find("requests") == requestJson.end()) throw RequestEmpty();
-    requests.close();
-}
-
 int main()
 {
-    try{
-        CheckConfigFiles();
+    std::vector<std::string> searchRequest;
+    try{    searchRequest = ConverterJSON::GetRequest();   }
+    catch (nlohmann::json::parse_error &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 0;
     }
     catch(const std::exception &ex){
         std::cerr << ex.what() << std::endl;
         return 0;
     }
-    ConverterJSON configSearch;
-
-
-    std::vector<std::string> searchRequest = configSearch.GetRequest();
 
     InvertedIndex idx;
 
-    idx.UpdateDocumentBase(configSearch.GetTextDocuments());
+    try{ idx.UpdateDocumentBase(ConverterJSON::GetTextDocuments()); }
+    catch (nlohmann::json::parse_error &e)
+    {
+        std::cerr << e.what() << std::endl;
+        return 0;
+    }
+    catch(const std::exception &ex){
+        std::cerr << ex.what() << std::endl;
+        return 0;
+    }
 
     std::vector<std::vector<Entry>> results;
 
@@ -84,7 +38,7 @@ int main()
 
     std::vector<std::vector<RelativeIndex>> answer = srv.search(searchRequest);
 
-    configSearch.putAnswers(answer);
+    ConverterJSON::putAnswers(answer);
 
     return 0;
 }

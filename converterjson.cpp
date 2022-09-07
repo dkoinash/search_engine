@@ -1,4 +1,70 @@
 #include "converterjson.h"
+
+class ConfigMissing: public std::exception
+{
+public:
+    const char* what() const noexcept override
+    {
+        return "The config file is missing.";
+    }
+};
+class RequestMissing: public std::exception
+{
+public:
+    const char* what() const noexcept override
+    {
+        return "The request file is missing.";
+    }
+};
+class ConfigEmpty: public std::exception
+{
+public:
+    const char* what() const noexcept override
+    {
+        return "The config file is empty.";
+    }
+};
+class RequestEmpty: public std::exception
+{
+public:
+    const char* what() const noexcept override
+    {
+        return "The request file is empty.";
+    }
+};
+
+
+void checkConfigFile(){
+    std::ifstream configFile;
+    configFile.open("config.json");
+    nlohmann::json configJson;
+    configFile >> configJson;
+    if (configJson.find("config") == configJson.end() ||
+        configJson.find("files") == configJson.end())
+        throw ConfigEmpty();
+    configFile.close();
+    nlohmann::json configJsonConfig = configJson["config"];
+    if (configJsonConfig.find("max_responses") == configJsonConfig.end() ||
+        configJsonConfig.find("name") == configJsonConfig.end() ||
+        configJsonConfig.find("version") == configJsonConfig.end())
+        throw ConfigEmpty();
+}
+
+void checkRequestFile(){
+    std::ifstream requestFile;
+    requestFile.open("requests.json");
+    if(!requestFile.is_open()){
+        throw RequestMissing();
+    }else {
+        nlohmann::json requestJson;
+        requestFile >> requestJson;
+        if (requestJson.find("requests") == requestJson.end()) throw RequestEmpty();
+        requestFile.close();
+    }
+}
+
+
+
 std::mutex mtx;
 std::string getDoc(const std::string& address) {
     std::ifstream docFile;
@@ -25,8 +91,8 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
     std::vector<std::string> result;
     std::ifstream configFile;
     configFile.open("config.json");
-
     if(configFile.is_open()){
+        checkConfigFile();
         nlohmann::json file;
         configFile >> file;
         configFile.close();
@@ -42,7 +108,7 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
             result.push_back(futureDocs.front().get());
             futureDocs.pop();
         }
-    }
+    }else throw ConfigMissing();
     return result;
 }
 
@@ -50,8 +116,8 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
 int ConverterJSON::GetResponsesLimit() {
     std::ifstream configFile;
     configFile.open("config.json");
-
     if(configFile.is_open()){
+        checkConfigFile();
         nlohmann::json dict;
         configFile >> dict;
         configFile.close();
@@ -59,7 +125,7 @@ int ConverterJSON::GetResponsesLimit() {
         std::cout << "Starting " << config_part["name"] << std::endl;
         std::cout << "version: " << config_part["version"] << std::endl;
         return config_part["max_responses"];
-    }
+    }else throw ConfigMissing();
     return 5;
 }
 
@@ -69,13 +135,14 @@ std::vector<std::string> ConverterJSON::GetRequest() {
     std::ifstream requestFile;
     requestFile.open("requests.json");
     if(requestFile.is_open()){
+        checkRequestFile();
         nlohmann::json list;
         requestFile >> list;
         requestFile.close();
         for(auto it = list["requests"].begin(); it != list["requests"].end(); it++) {
             result.push_back(it.value());
         }
-    }
+    }else throw RequestMissing();
     return result;
 }
 //*Положить в файл answers.json результаты поисковых запросов

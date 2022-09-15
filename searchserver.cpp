@@ -69,8 +69,15 @@ std::vector<std::vector<RelativeIndex>> SearchServer::search(const std::vector<s
 {
     std::vector<std::vector<RelativeIndex>> result;
     int maxCountResult = 5;
-    maxCountResult = ConverterJSON::GetResponsesLimit();
-
+    try {
+        maxCountResult = ConverterJSON::GetResponsesLimit();
+    }
+    catch (nlohmann::json::parse_error &e){
+        std::cerr << "File error in request.json. Details: " << e.what() << std::endl;
+    }
+    catch(const std::exception &ex){
+        std::cerr << ex.what() << std::endl;
+    }
     float maxRel = 0.0;
 
     for (auto str : queries_input) {

@@ -6,7 +6,7 @@ int main()
     try{    searchRequest = ConverterJSON::GetRequest();   }
     catch (nlohmann::json::parse_error &e)
     {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "File error in request.json. Details: " << e.what() << std::endl;
         return 0;
     }
     catch(const std::exception &ex){
@@ -19,7 +19,7 @@ int main()
     try{ idx.UpdateDocumentBase(ConverterJSON::GetTextDocuments()); }
     catch (nlohmann::json::parse_error &e)
     {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "File error in config.json. Details: " << e.what() << std::endl;
         return 0;
     }
     catch(const std::exception &ex){

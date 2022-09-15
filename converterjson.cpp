@@ -16,6 +16,14 @@ public:
         return "The request file is missing.";
     }
 };
+class AnswerMissing: public std::exception
+{
+public:
+    const char* what() const noexcept override
+    {
+        return "The answer file not created.";
+    }
+};
 class ConfigEmpty: public std::exception
 {
 public:
@@ -112,7 +120,7 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
     return result;
 }
 
-//Метод считывает поле max_responses для определения предельного количества ответов на один запрос @return
+
 int ConverterJSON::GetResponsesLimit() {
     std::ifstream configFile;
     configFile.open("config.json");
@@ -129,7 +137,6 @@ int ConverterJSON::GetResponsesLimit() {
     return 5;
 }
 
-//Метод получения запросов из файла request.json @return возвращает список запросов из файла request.json
 std::vector<std::string> ConverterJSON::GetRequest() {
     std::vector<std::string> result;
     std::ifstream requestFile;
@@ -145,8 +152,7 @@ std::vector<std::string> ConverterJSON::GetRequest() {
     }else throw RequestMissing();
     return result;
 }
-//*Положить в файл answers.json результаты поисковых запросов
-//old//void ConverterJSON::putAnswers(std::vector<std::vector<std::pair<int, float>>> answers) {
+
 void ConverterJSON::putAnswers(std::vector<std::vector<RelativeIndex>> answers) {
     nlohmann::json answersMain;
     nlohmann::json answersSec;
@@ -158,10 +164,8 @@ void ConverterJSON::putAnswers(std::vector<std::vector<RelativeIndex>> answers) 
             requestMain["_result"] = "true";
             for(auto itReq = it->begin(); itReq != it->end(); ++itReq){
                 nlohmann::json tmpPart;
-                //old//tmpPart["docid"] = itReq->first;
                 tmpPart["docid"] = itReq->docId;
-                //old//tmpPart["rank"] = itReq->second;
-                tmpPart["rank"] = itReq->rank;
+                tmpPart["rank"] = ((int)(itReq->rank * 1000 + .5) / 1000.0);
                 relevanceMain += tmpPart;
             }
             requestMain["relevance"] = relevanceMain;
@@ -174,7 +178,10 @@ void ConverterJSON::putAnswers(std::vector<std::vector<RelativeIndex>> answers) 
         numberReq++;
     }
     answersMain["answers"] = answersSec;
-    std::ofstream readyAnswerFile("answer.json");
-    readyAnswerFile << answersMain;
-    readyAnswerFile.close();
+    std::ofstream readyAnswerFile;
+    readyAnswerFile.open("answer.json");
+    if(readyAnswerFile.is_open()){
+        readyAnswerFile << answersMain;
+        readyAnswerFile.close();
+    }else throw AnswerMissing();
 }

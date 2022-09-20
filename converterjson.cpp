@@ -44,7 +44,7 @@ public:
 
 void checkConfigFile(){
     std::ifstream configFile;
-    configFile.open("config.json");
+    configFile.open(CONFIG);
     nlohmann::json configJson;
     configFile >> configJson;
     if (configJson.find("config") == configJson.end() ||
@@ -60,7 +60,7 @@ void checkConfigFile(){
 
 void checkRequestFile(){
     std::ifstream requestFile;
-    requestFile.open("requests.json");
+    requestFile.open(REQUEST);
     if(!requestFile.is_open()){
         throw RequestMissing();
     }else {
@@ -88,7 +88,7 @@ std::string getDoc(const std::string& address) {
         do {
             str.clear();
             docFile >> str;
-            if(doc.size() == 0) doc += str;
+            if(doc.empty()) doc += str;
             else doc += " " + str;
         } while (!docFile.eof());
     }
@@ -98,7 +98,7 @@ std::string getDoc(const std::string& address) {
 std::vector<std::string> ConverterJSON::GetTextDocuments() {
     std::vector<std::string> result;
     std::ifstream configFile;
-    configFile.open("config.json");
+    configFile.open(CONFIG);
     if(configFile.is_open()){
         checkConfigFile();
         nlohmann::json file;
@@ -123,7 +123,7 @@ std::vector<std::string> ConverterJSON::GetTextDocuments() {
 
 int ConverterJSON::GetResponsesLimit() {
     std::ifstream configFile;
-    configFile.open("config.json");
+    configFile.open(CONFIG);
     if(configFile.is_open()){
         checkConfigFile();
         nlohmann::json dict;
@@ -140,7 +140,7 @@ int ConverterJSON::GetResponsesLimit() {
 std::vector<std::string> ConverterJSON::GetRequest() {
     std::vector<std::string> result;
     std::ifstream requestFile;
-    requestFile.open("requests.json");
+    requestFile.open(REQUEST);
     if(requestFile.is_open()){
         checkRequestFile();
         nlohmann::json list;

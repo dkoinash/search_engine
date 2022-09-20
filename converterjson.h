@@ -11,6 +11,9 @@
 #include <queue>
 #include <mutex>
 
+const std::string CONFIG = "config.json";
+const std::string REQUEST = "requests.json";
+
 struct Entry {
     size_t docId, count;
     bool operator ==(const Entry& other) const {
